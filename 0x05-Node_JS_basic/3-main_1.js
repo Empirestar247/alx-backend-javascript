@@ -8,3 +8,4 @@ countStudents("database.csv")
         console.log(error);
     });
 console.log("After!");
+

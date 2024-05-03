@@ -24,4 +24,3 @@ module.exports = function readDatabase (filePath) {
     });
   });
 };
-
