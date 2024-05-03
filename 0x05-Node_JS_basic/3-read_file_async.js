@@ -1,32 +1,50 @@
 const fs = require('fs');
 
-async function countStudents (path) {
-  if (fs.existsSync(path)) {
-    return new Promise((resolve) => {
-      fs.readFile(path, 'utf8', (err, data) => {
-        if (err) {
-          throw Error('Cannot load the database');
+/**
+ * Counts the students in a CSV data file.
+ * @param {String} dataPath The path to the CSV data file.
+ * @author Bezaleel Olakunori <https://github.com/B3zaleel>
+ */
+const countStudents = (dataPath) => new Promise((resolve, reject) => {
+  fs.readFile(dataPath, 'utf-8', (err, data) => {
+    if (err) {
+      reject(new Error('Cannot load the database'));
+    }
+    if (data) {
+      const fileLines = data
+        .toString('utf-8')
+        .trim()
+        .split('\n');
+      const studentGroups = {};
+      const dbFieldNames = fileLines[0].split(',');
+      const studentPropNames = dbFieldNames
+        .slice(0, dbFieldNames.length - 1);
+
+      for (const line of fileLines.slice(1)) {
+        const studentRecord = line.split(',');
+        const studentPropValues = studentRecord
+          .slice(0, studentRecord.length - 1);
+        const field = studentRecord[studentRecord.length - 1];
+        if (!Object.keys(studentGroups).includes(field)) {
+          studentGroups[field] = [];
         }
-        const result = [];
-        data.split('\n').forEach((data) => {
-          result.push(data.split(','));
-        });
-        result.shift();
-        const newis = [];
-        result.forEach((data) => newis.push([data[0], data[3]]));
-        const fields = new Set();
-        newis.forEach((item) => fields.add(item[1]));
-        const final = {};
-        fields.forEach((data) => { (final[data] = 0); });
-        newis.forEach((data) => { (final[data[1]] += 1); });
-        console.log(`Number of students: ${result.filter((check) => check.length > 3).length}`);
-        Object.keys(final).forEach((data) => console.log(`Number of students in ${data}: ${final[data]}. List: ${newis.filter((n) => n[1] === data).map((n) => n[0]).join(', ')}`));
-        resolve(result, final, newis);
-      });
-    });
-  }
-  throw Error('Cannot load the database');
-}
+        const studentEntries = studentPropNames
+          .map((propName, idx) => [propName, studentPropValues[idx]]);
+        studentGroups[field].push(Object.fromEntries(studentEntries));
+      }
+
+      const totalStudents = Object
+        .values(studentGroups)
+        .reduce((pre, cur) => (pre || []).length + cur.length);
+      console.log(`Number of students: ${totalStudents}`);
+      for (const [field, group] of Object.entries(studentGroups)) {
+        const studentNames = group.map((student) => student.firstname).join(', ');
+        console.log(`Number of students in ${field}: ${group.length}. List: ${studentNames}`);
+      }
+      resolve(true);
+    }
+  });
+});
 
 module.exports = countStudents;
 
